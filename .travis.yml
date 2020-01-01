@@ -1,0 +1,25 @@
+sudo: required
+language: generic
+services:
+    - docker
+
+before_install:
+    - docker build -t nsitkarana/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run -e CI=true nsitkarana/react-test npm test
+
+after_success:
+    - docker build -t nsitkarana/multi-client ./client
+    - docker build -t nsitkarana/multi-nginx ./nginx
+    - docker build -t nsitkarana/multi-server ./server
+    - docker build -t nsitkarana/multi-worker ./worker
+
+    #Login to the docker CLI
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+    #Take those images and push to dockerhub
+    - docker push nsitkarana/multi-client
+    - docker push nsitkarana/multi-nginx
+    - docker push nsitkarana/multi-server
+    - docker push nsitkarana/multi-worker
